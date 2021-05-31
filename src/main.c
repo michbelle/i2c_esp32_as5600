@@ -60,14 +60,7 @@ static esp_err_t  i2c_master_read_sensor_angle(i2c_port_t i2c_num, uint8_t *data
     i2c_master_write_byte(cmd, ADDRESS_ANGLE, ACK_CHECK_EN);
     //i2c_master_write(cmd, ADDRESS_ANGLE, size, ACK_CHECK_EN);
 
-    i2c_master_stop(cmd);
-    ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
-    i2c_cmd_link_delete(cmd);
-    if (ret != ESP_OK) {
-        return ret;
-    }
-    vTaskDelay(30 / portTICK_RATE_MS);
-    cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);  //restart, and read 0x0C register
 
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (hall_sensor << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
