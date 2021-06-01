@@ -4,9 +4,36 @@
 #include "sdkconfig.h"
 
 #define hall_sensor 0x36 //address hall sensors
+/********************
+ * config registri
+ * ******************/
+#define ZMCO_ADD 0x00 // R 1:0
+#define ZPOS_ADD 0x01 // R/W/P 11:8
+#define ZPOS_LONG_ADD 0x02 // R/W/P 7:0
+#define MPOS_ADD 0x03 // R/W/P 11:8
+#define MPOS_LONG_ADD 0x04 // R/W/P 7:0
+#define MANG_ADD 0x05 // R/W/P 11:8
+#define MANG_LONG_ADD 0x06 // R/W/P 7:0 
+#define CONF1_ADD 0x07 // R/W/P WD(5) FTH(4:2) SF(1:0)
+#define CONF2_ADD 0x08 // R/W/P PWMF(7:6) OUTS(5:4) HYST(3:2) PM(1:0)
 
 
-#define ADDRESS_ANGLE (int) 0x0D
+/********************
+ * output registri
+ * ******************/
+
+#define RAW_ANGLE_ADD 0x0C // R 11:8
+#define RAW_ANGLE_LONG_ADD 0x0D // R 7:0
+#define ANGLE_ADD 0x0E // R 11:8
+#define ANGLE_LONG_ADD 0x0F // R 7:0
+/********************
+ * status registri
+ * ******************/
+
+
+/********************
+ * burn registri
+ * ******************/
 
 #define I2C_MASTER_SDA_IO 21 //gpio pin for sda
 #define I2C_MASTER_SCL_IO 22 //gpio pin for scl
@@ -69,7 +96,7 @@ void send_receive_data(i2c_port_t i2c_num, int adress, uint8_t * value)
 int get_raw_angle()
 {
     uint8_t  angle;
-    send_receive_data(0, ADDRESS_ANGLE, &angle);
+    send_receive_data(0, RAW_ANGLE_LONG_ADD, &angle);
     return (int) angle;
 }
 
