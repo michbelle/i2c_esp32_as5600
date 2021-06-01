@@ -4,19 +4,21 @@
 #include "sdkconfig.h"
 
 #define hall_sensor 0x36 //address hall sensors
+
 /********************
  * config registri
  * ******************/
-#define ZMCO_ADD 0x00 // R 1:0
-#define ZPOS_ADD 0x01 // R/W/P 11:8
+#define ZMCO_ADD 0x00 // R 1:0  f ZPOS and MPOS have never been permanently written 
+#define ZPOS_ADD 0x01 // R/W/P 11:8   start position
 #define ZPOS_LONG_ADD 0x02 // R/W/P 7:0
-#define MPOS_ADD 0x03 // R/W/P 11:8
+#define MPOS_ADD 0x03 // R/W/P 11:8   stop position  
 #define MPOS_LONG_ADD 0x04 // R/W/P 7:0
 #define MANG_ADD 0x05 // R/W/P 11:8
 #define MANG_LONG_ADD 0x06 // R/W/P 7:0 
 #define CONF1_ADD 0x07 // R/W/P WD(5) FTH(4:2) SF(1:0)
+        //watchdogs - fast filter threshold - slow filter 
 #define CONF2_ADD 0x08 // R/W/P PWMF(7:6) OUTS(5:4) HYST(3:2) PM(1:0)
-
+        //PWM frequency - output stage - hysteresis - power mode
 
 /********************
  * output registri
@@ -30,10 +32,25 @@
  * status registri
  * ******************/
 
+#define STATUS_ADD 0x0B // MD(5) ML(4) MH(3)
+        /*
+        MH AGC minimum gain overflow, magnet too strong
+        ML AGC maximum gain overflow, magnet too weak
+        MD Magnet detected
+        */
 
+#define AGC_ADD 0x1A // R 7:0
+        //s Automatic Gain Control 
+#define MAGNITUDE_ADD 0x1B // R 11:8
+        // magnitude value of the internal CORDIC
+#define MAGNITUDE_LONG_ADD 0x1C // R 7:0
 /********************
  * burn registri
  * ******************/
+
+#define BURN_ADD 0xFF // W : Burn_Angle = 0x80; Burn_Setting = 0x40
+
+
 
 #define I2C_MASTER_SDA_IO 21 //gpio pin for sda
 #define I2C_MASTER_SCL_IO 22 //gpio pin for scl
