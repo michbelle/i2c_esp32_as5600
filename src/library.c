@@ -3,6 +3,8 @@
 #include "driver/i2c.h"
 #include "sdkconfig.h"
 
+#include<unistd.h>
+
 #define hall_sensor 0x36 //address hall sensors
 
 /********************
@@ -28,6 +30,7 @@
 #define RAW_ANGLE_LONG_ADD 0x0D // R 7:0
 #define ANGLE_ADD 0x0E // R 11:8
 #define ANGLE_LONG_ADD 0x0F // R 7:0
+
 /********************
  * status registri
  * ******************/
@@ -110,11 +113,37 @@ void send_receive_data(i2c_port_t i2c_num, int adress, uint8_t * value)
     i2c_cmd_link_delete(cmd);
 }
 
-int get_raw_angle()
+int get_raw_angle_long()
 {
     uint8_t  angle;
     send_receive_data(0, RAW_ANGLE_LONG_ADD, &angle);
     return (int) angle;
+}
+
+int get_raw_angle()
+{
+    uint8_t angle;
+    send_receive_data(0, RAW_ANGLE_ADD, &angle);
+    return  (int) angle;
+}
+
+int get_angle_long()
+{
+    uint8_t  angle;
+    send_receive_data(0, ANGLE_LONG_ADD, &angle);
+    return (int) angle;
+}
+
+int get_angle()
+{
+    uint8_t  angle;
+    send_receive_data(0, ANGLE_ADD, &angle);
+    return (int) angle;
+}
+
+void get_magnete_status()
+{
+    
 }
 
 void app_main(void)
@@ -122,6 +151,12 @@ void app_main(void)
     ESP_ERROR_CHECK(i2c_master_init());
     while(1)
     {
-        printf("angolo: %d\n",get_raw_angle());
+        printf("\nangolo_raw: %d\n",get_raw_angle());
+        printf("angolo_raw_long: %d\n",get_raw_angle_long());
+        printf("angolo: %d\n",get_angle());
+        printf("angolo_long: %d\n",get_angle_long());
+
+        
+        sleep(1);
     }
 }
