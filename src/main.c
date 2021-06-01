@@ -24,6 +24,7 @@ Test code for i2c communication with hull encoder and mpu
 #define ACK_VAL 0x0                             /*!< I2C ack value */
 #define NACK_VAL 0x1                            /*!< I2C nack value */
 
+
 SemaphoreHandle_t print_mux = NULL;
 
 /**
@@ -60,9 +61,9 @@ static esp_err_t  i2c_master_read_sensor_angle(i2c_port_t i2c_num, uint8_t *data
     i2c_master_write_byte(cmd, ADDRESS_ANGLE, ACK_CHECK_EN);
     //i2c_master_write(cmd, ADDRESS_ANGLE, size, ACK_CHECK_EN);
 
-    i2c_master_start(cmd);  //restart, and read 0x0C register
+    i2c_master_start(cmd);  //restart, and 
 
-    i2c_master_start(cmd);
+    //read 0x0C register
     i2c_master_write_byte(cmd, (hall_sensor << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
     i2c_master_read_byte(cmd, data_rd, NACK_VAL);
     
@@ -74,7 +75,6 @@ static esp_err_t  i2c_master_read_sensor_angle(i2c_port_t i2c_num, uint8_t *data
     
     return ret;
 }
-
 
 
 static void i2c_test_task(void *arg)
