@@ -91,7 +91,7 @@ static esp_err_t i2c_master_init(void)
 }
 
 
-void send_receive_data(i2c_port_t i2c_num, int adress, uint16_t * value)
+void send_receive_data(i2c_port_t i2c_num, int adress, uint8_t * value_lsb, uint8_t * value_msb)
 {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     
@@ -99,47 +99,71 @@ void send_receive_data(i2c_port_t i2c_num, int adress, uint16_t * value)
     
     i2c_master_write_byte(cmd, (hall_sensor << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
     i2c_master_write_byte(cmd, adress, ACK_CHECK_EN);
-
+//***********
+    i2c_master_stop(cmd);
+    i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
+    i2c_cmd_link_delete(cmd);
+    vTaskDelay(30 / portTICK_RATE_MS);
+    cmd = i2c_cmd_link_create();
+//***********
     i2c_master_start(cmd);  //restart, and 
 
     //read register
     i2c_master_write_byte(cmd, (hall_sensor << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
     
-    uint8_t value_lsb;
+    //uint8_t value_lsb;
     if (adress==ZPOS_ADD||adress==MPOS_ADD||adress==MANG_ADD||adress==RAW_ANGLE_ADD||adress==ANGLE_ADD||adress==MAGNITUDE_ADD)
     {
-        i2c_master_read_byte(cmd,&value_lsb,ACK_VAL);
+        i2c_master_read_byte(cmd,value_lsb,ACK_VAL);
+        //printf("\nlsb: %d", (int) value_lsb);
     }
 
-    uint8_t value_msb;
-    i2c_master_read_byte(cmd, &value_msb, NACK_VAL);
-    
-    *value=(((uint16_t)value_lsb<<8)|value_msb);
+    //uint8_t value_msb;
+    i2c_master_read_byte(cmd, value_msb, NACK_VAL);
+    //printf("\nmsb: %d", (int) value_msb);
+
     
     i2c_master_stop(cmd);
 
     i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
-
+    
     i2c_cmd_link_delete(cmd);
 }
 
+uint8_t value_lsb,value_msb;
+
+uint8_t zeros,magnete_status;
+
+uint16_t angle;
+
+
 int get_raw_angle()
-{
-    uint16_t angle;
-    send_receive_data(0, RAW_ANGLE_ADD, &angle);
-    return  (int) angle & 0b0000011111111111;
+{    
+    send_receive_data(0, RAW_ANGLE_ADD, &value_lsb, &value_msb);
+    angle=(((uint16_t)value_lsb<<8)|value_msb);
+    return ((int) angle & 0b0000111111111111)*360/4096;
 }
 
 int get_angle()
 {
-    uint16_t  angle;
-    send_receive_data(0, ANGLE_ADD, &angle);
-    return (int) angle & 0b0000011111111111;
+    send_receive_data(0, ANGLE_ADD, &value_lsb, &value_msb);
+    angle=(((uint16_t)value_lsb<<8)|value_msb);
+    return ((int) angle & 0b0000111111111111)*360/4096;
 }
 
 void get_magnete_status()
 {
-    
+    //MD(5) ML(4) MH(3)
+        /*
+        MH AGC minimum gain overflow, magnet too strong
+        ML AGC maximum gain overflow, magnet too weak
+        MD Magnet detected
+        */
+
+    send_receive_data(0, STATUS_ADD,&zeros, &magnete_status);
+    ((magnete_status & 0b00001000) == 0b00001000)?printf("strong\n"):printf("good\n");
+    ((magnete_status & 0b00010000) == 0b00010000)?printf("weak\n"):printf("good\n");
+    ((magnete_status & 0b00100000) == 0b00100000)?printf("c'è\n"):printf("manca\n");
 }
 
 void app_main(void)
@@ -149,6 +173,7 @@ void app_main(void)
     {
         printf("\nangolo_raw: %d\n",get_raw_angle());
         printf("angolo: %d\n",get_angle());
+        get_magnete_status();
 
         
         sleep(1);
