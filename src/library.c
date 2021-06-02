@@ -12,11 +12,11 @@
  * ******************/
 #define ZMCO_ADD 0x00 // R 1:0  f ZPOS and MPOS have never been permanently written 
 #define ZPOS_ADD 0x01 // R/W/P 11:8   start position
-#define ZPOS_LONG_ADD 0x02 // R/W/P 7:0
+//#define ZPOS_LONG_ADD 0x02 // R/W/P 7:0
 #define MPOS_ADD 0x03 // R/W/P 11:8   stop position  
-#define MPOS_LONG_ADD 0x04 // R/W/P 7:0
+//#define MPOS_LONG_ADD 0x04 // R/W/P 7:0
 #define MANG_ADD 0x05 // R/W/P 11:8
-#define MANG_LONG_ADD 0x06 // R/W/P 7:0 
+//#define MANG_LONG_ADD 0x06 // R/W/P 7:0 
 #define CONF1_ADD 0x07 // R/W/P WD(5) FTH(4:2) SF(1:0)
         //watchdogs - fast filter threshold - slow filter 
 #define CONF2_ADD 0x08 // R/W/P PWMF(7:6) OUTS(5:4) HYST(3:2) PM(1:0)
@@ -27,9 +27,9 @@
  * ******************/
 
 #define RAW_ANGLE_ADD 0x0C // R 11:8
-#define RAW_ANGLE_LONG_ADD 0x0D // R 7:0
+//#define RAW_ANGLE_LONG_ADD 0x0D // R 7:0
 #define ANGLE_ADD 0x0E // R 11:8
-#define ANGLE_LONG_ADD 0x0F // R 7:0
+//#define ANGLE_LONG_ADD 0x0F // R 7:0
 
 /********************
  * status registri
@@ -46,7 +46,7 @@
         //s Automatic Gain Control 
 #define MAGNITUDE_ADD 0x1B // R 11:8
         // magnitude value of the internal CORDIC
-#define MAGNITUDE_LONG_ADD 0x1C // R 7:0
+//#define MAGNITUDE_LONG_ADD 0x1C // R 7:0
 /********************
  * burn registri
  * ******************/
@@ -91,7 +91,7 @@ static esp_err_t i2c_master_init(void)
 }
 
 
-void send_receive_data(i2c_port_t i2c_num, int adress, uint8_t * value)
+void send_receive_data(i2c_port_t i2c_num, int adress, uint16_t * value)
 {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     
@@ -104,7 +104,17 @@ void send_receive_data(i2c_port_t i2c_num, int adress, uint8_t * value)
 
     //read register
     i2c_master_write_byte(cmd, (hall_sensor << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
-    i2c_master_read_byte(cmd, value, NACK_VAL);
+    
+    uint8_t value_lsb;
+    if (adress==ZPOS_ADD||adress==MPOS_ADD||adress==MANG_ADD||adress==RAW_ANGLE_ADD||adress==ANGLE_ADD||adress==MAGNITUDE_ADD)
+    {
+        i2c_master_read_byte(cmd,&value_lsb,ACK_VAL);
+    }
+
+    uint8_t value_msb;
+    i2c_master_read_byte(cmd, &value_msb, NACK_VAL);
+    
+    *value=(((uint16_t)value_lsb<<8)|value_msb);
     
     i2c_master_stop(cmd);
 
@@ -113,32 +123,18 @@ void send_receive_data(i2c_port_t i2c_num, int adress, uint8_t * value)
     i2c_cmd_link_delete(cmd);
 }
 
-int get_raw_angle_long()
-{
-    uint8_t  angle;
-    send_receive_data(0, RAW_ANGLE_LONG_ADD, &angle);
-    return (int) angle;
-}
-
 int get_raw_angle()
 {
-    uint8_t angle;
+    uint16_t angle;
     send_receive_data(0, RAW_ANGLE_ADD, &angle);
-    return  (int) angle;
-}
-
-int get_angle_long()
-{
-    uint8_t  angle;
-    send_receive_data(0, ANGLE_LONG_ADD, &angle);
-    return (int) angle;
+    return  (int) angle & 0b0000011111111111;
 }
 
 int get_angle()
 {
-    uint8_t  angle;
+    uint16_t  angle;
     send_receive_data(0, ANGLE_ADD, &angle);
-    return (int) angle;
+    return (int) angle & 0b0000011111111111;
 }
 
 void get_magnete_status()
@@ -152,9 +148,7 @@ void app_main(void)
     while(1)
     {
         printf("\nangolo_raw: %d\n",get_raw_angle());
-        printf("angolo_raw_long: %d\n",get_raw_angle_long());
         printf("angolo: %d\n",get_angle());
-        printf("angolo_long: %d\n",get_angle_long());
 
         
         sleep(1);
