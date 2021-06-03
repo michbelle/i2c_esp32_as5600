@@ -17,9 +17,9 @@
 //#define MPOS_LONG_ADD 0x04 // R/W/P 7:0
 #define MANG_ADD 0x05 // R/W/P 11:8
 //#define MANG_LONG_ADD 0x06 // R/W/P 7:0 
-#define CONF1_ADD 0x07 // R/W/P WD(5) FTH(4:2) SF(1:0)
+#define CONF_ADD 0x07 // R/W/P WD(5) FTH(4:2) SF(1:0)
         //watchdogs - fast filter threshold - slow filter 
-#define CONF2_ADD 0x08 // R/W/P PWMF(7:6) OUTS(5:4) HYST(3:2) PM(1:0)
+//#define CONF2_ADD 0x08 // R/W/P PWMF(7:6) OUTS(5:4) HYST(3:2) PM(1:0)
         //PWM frequency - output stage - hysteresis - power mode
 
 /********************
@@ -47,14 +47,70 @@
 #define MAGNITUDE_ADD 0x1B // R 11:8
         // magnitude value of the internal CORDIC
 //#define MAGNITUDE_LONG_ADD 0x1C // R 7:0
+
+
 /********************
  * burn registri
  * ******************/
 
 #define BURN_ADD 0xFF // W : Burn_Angle = 0x80; Burn_Setting = 0x40
 
+/*******************
+ * config parameters
+ * ********************/
+
+//PM(1:0) Power Mode 
+
+#define NOM 0b00
+#define LPM1 0b01
+#define LPM2 0b10
+#define LPM3 0b11
+
+//HYST(1:0) 3:2 Hysteresis 
+
+#define OFF 0b00
+#define LSB 0b01
+#define LSBs1 0b10
+#define LSBs2 0b11
+
+//OUTS(1:0) 5:4 Output Stage
+
+#define ANAL_FULL 0b00 //analogic full range from 0% to 100% between GND and VDD
+#define ANAL_RED 0b01 //analogic reduced range from 10% to 90% between GND and VDD
+#define PWM 0b10 //digital PWM
+
+//PWMF(1:0) 7:6 PWM Frequency 
+
+#define PWM_115 0b00
+#define PWM_230 0b01
+#define PWM_460 0b10
+#define PWM_920 0b11
+
+//SF (1:0) 9:8 Slow Filter 
+
+#define SL_16x 0b00
+#define SL_8x 0b01
+#define SL_4x 0b10
+#define SL_2x 0b11
+
+//FTH (2:0) 12:10 Fast Filter Threshold 
+
+#define FTH_SLOW_ONLY 0b000
+#define FTH_6LSB 0b001
+#define FTH_7LSB 0b010
+#define FTH_9LSB 0b011
+#define FTH_18LSB 0b100
+#define FTH_21LSB 0b101
+#define FTH_24LSB 0b110
+#define FTH_10LSB 0b111
+
+//WD (13) Watchdog 
+
+#define WDOG_OFF 0b0
+#define WDOG_ON 0b1
 
 
+/**************************************************/
 #define I2C_MASTER_SDA_IO 21 //gpio pin for sda
 #define I2C_MASTER_SCL_IO 22 //gpio pin for scl
 #define I2C_MASTER_FREQ_HZ 1000 //herz 
@@ -68,9 +124,7 @@
 #define NACK_VAL 0x1                            /*!< I2C nack value */
 
 
-/*
-test
-*/
+
 static esp_err_t i2c_master_init(void)
 {
     int i2c_master_port = 0;
@@ -112,7 +166,7 @@ void send_receive_data(i2c_port_t i2c_num, int adress, uint8_t * value_lsb, uint
     i2c_master_write_byte(cmd, (hall_sensor << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
     
     //uint8_t value_lsb;
-    if (adress==ZPOS_ADD||adress==MPOS_ADD||adress==MANG_ADD||adress==RAW_ANGLE_ADD||adress==ANGLE_ADD||adress==MAGNITUDE_ADD)
+    if (adress==ZPOS_ADD||adress==MPOS_ADD||adress==MANG_ADD||adress==RAW_ANGLE_ADD||adress==ANGLE_ADD||adress==MAGNITUDE_ADD||adress==CONF_ADD)
     {
         i2c_master_read_byte(cmd,value_lsb,ACK_VAL);
         //printf("\nlsb: %d", (int) value_lsb);
@@ -130,25 +184,23 @@ void send_receive_data(i2c_port_t i2c_num, int adress, uint8_t * value_lsb, uint
     i2c_cmd_link_delete(cmd);
 }
 
-uint8_t value_lsb,value_msb;
+uint8_t value_lsb,value_msb,zeros;
 
-uint8_t zeros,magnete_status;
-
-uint16_t angle;
+uint16_t angle, magnitude;
 
 
-int get_raw_angle()
+double get_raw_angle()
 {    
     send_receive_data(0, RAW_ANGLE_ADD, &value_lsb, &value_msb);
     angle=(((uint16_t)value_lsb<<8)|value_msb);
-    return ((int) angle & 0b0000111111111111)*360/4096;
+    return ((int) angle & 0b0000111111111111)*360.0/4096.0;
 }
 
-int get_angle()
+double get_angle()
 {
     send_receive_data(0, ANGLE_ADD, &value_lsb, &value_msb);
     angle=(((uint16_t)value_lsb<<8)|value_msb);
-    return ((int) angle & 0b0000111111111111)*360/4096;
+    return ((int) (angle & 0b0000111111111111))*360.0/4096.0;
 }
 
 void get_magnete_status()
@@ -160,10 +212,125 @@ void get_magnete_status()
         MD Magnet detected
         */
 
-    send_receive_data(0, STATUS_ADD,&zeros, &magnete_status);
-    ((magnete_status & 0b00001000) == 0b00001000)?printf("strong\n"):printf("good\n");
-    ((magnete_status & 0b00010000) == 0b00010000)?printf("weak\n"):printf("good\n");
-    ((magnete_status & 0b00100000) == 0b00100000)?printf("c'è\n"):printf("manca\n");
+    send_receive_data(0, STATUS_ADD,&zeros, &value_msb);
+    ((value_msb & 0b00001000) == 0b00001000)?printf("\nstrong"):printf("\ngood");
+    ((value_msb & 0b00010000) == 0b00010000)?printf("\nweak"):printf("\ngood");
+    ((value_msb & 0b00100000) == 0b00100000)?printf("\nc'è"):printf("\nmanca");
+}
+
+int get_AGC()
+{
+    send_receive_data(0, AGC_ADD,&zeros, &value_msb);
+    return (int) value_msb;
+}
+
+int get_magnitude()
+{
+    send_receive_data(0, MAGNITUDE_ADD,&value_lsb, &value_msb);
+    magnitude=(((uint16_t)value_lsb<<8)|value_msb);
+    return (int) (magnitude & 0b0000111111111111);
+    
+}
+
+void get_config()
+{
+    send_receive_data(0, CONF_ADD,&value_lsb, &value_msb);
+    
+    //PM(1:0) Power Mode 
+    switch (value_msb & 0b00000011)
+    {
+        case NOM: printf("\nNOM"); break;
+        case LPM1: printf("\nLPM1"); break;
+        case LPM2: printf("\nLPM2"); break;
+        case LPM3: printf("\nLPM3"); break;
+    }
+    //HYST(1:0) 3:2 Hysteresis 
+    switch (value_msb>>2 & 0b00000011)
+    {
+        case OFF: printf("\nOFF"); break;
+        case LSB: printf("\nLSB"); break;
+        case LSBs1: printf("\nLSBs1"); break;
+        case LSBs2: printf("\nLSBs2"); break;
+    }
+
+    //OUTS(1:0) 5:4 Output Stage
+    switch (value_msb>>4 & 0b00000011)
+    {
+        case ANAL_FULL: printf("\nANAL_FULL"); break;
+        case ANAL_RED: printf("\nANAL_RED"); break;
+        case PWM: printf("\nPWM"); break;
+    }
+
+    //PWMF(1:0) 7:6 PWM Frequency 
+    switch (value_msb>>6 & 0b00000011)
+    {
+        case PWM_115: printf("\nPWM_115"); break;
+        case PWM_230: printf("\nPWM_230"); break;
+        case PWM_460: printf("\nPWM_460"); break;
+        case PWM_920: printf("\nPWM_920"); break;
+    }
+
+    //SF (1:0) 9:8 Slow Filter 
+    switch (value_lsb & 0b00000011)
+    {
+        case SL_16x: printf("\nSL_16x"); break;
+        case SL_8x: printf("\nSL_8x"); break;
+        case SL_4x: printf("\nSL_4x"); break;
+        case SL_2x: printf("\nSL_2x"); break;
+    }
+
+    //FTH (2:0) 12:10 Fast Filter Threshold 
+    switch (value_lsb>>2 & 0b000000111)
+    {
+        case FTH_SLOW_ONLY: printf("\nFTH_SLOW_ONLY"); break;
+        case FTH_6LSB: printf("\nFTH_6LSB"); break;
+        case FTH_7LSB: printf("\nFTH_7LSB"); break;
+        case FTH_9LSB: printf("\nFTH_9LSB"); break;
+        case FTH_18LSB: printf("\nFTH_18LSB"); break;
+        case FTH_21LSB: printf("\nFTH_21LSB"); break;
+        case FTH_24LSB: printf("\nFTH_24LSB"); break;
+        case FTH_10LSB: printf("\nFTH_10LSB"); break;
+    }
+
+    //WD (13) Watchdog
+
+    switch (value_lsb>>5 & 0b00000001)
+    {
+        case WDOG_OFF: printf("\nWDOG_OFF"); break;
+        case WDOG_ON: printf("\nWDOG_ON"); break;
+    }
+
+}
+
+#define ZMCO_ADD 0x00 // R 1:0  f ZPOS and MPOS have never been permanently written 
+
+double get_ZPOS() //start position
+{
+    send_receive_data(0, ZPOS_ADD, &value_lsb, &value_msb);
+    angle=(((uint16_t)value_lsb<<8)|value_msb);
+    return ((int) (angle & 0b0000111111111111))*360.0/4096.0;
+}
+
+double get_MPOS() //stop position
+{
+    send_receive_data(0, MPOS_ADD, &value_lsb, &value_msb);
+    angle=(((uint16_t)value_lsb<<8)|value_msb);
+    return ((int) (angle & 0b0000111111111111))*360.0/4096.0;
+}
+
+double get_MANG() //TOCHECK
+{
+    send_receive_data(0, MANG_ADD, &value_lsb, &value_msb);
+    angle=(((uint16_t)value_lsb<<8)|value_msb);
+    return ((int) (angle & 0b0000111111111111));
+}
+
+int get_ZMCO()
+{
+    send_receive_data(0, MANG_ADD, &value_lsb, &value_msb);
+    printf("\n\nZMCO: %d \n",((int) value_msb & 0b00000011));
+    return 0;
+
 }
 
 void app_main(void)
@@ -171,11 +338,17 @@ void app_main(void)
     ESP_ERROR_CHECK(i2c_master_init());
     while(1)
     {
-        printf("\nangolo_raw: %d\n",get_raw_angle());
-        printf("angolo: %d\n",get_angle());
+        printf("\nangolo_raw: %lf\n",get_raw_angle());
+        printf("angolo: %lf\n",get_angle());
         get_magnete_status();
-
         
-        sleep(1);
+        printf("AGC: %d\n",get_AGC());
+        printf("magnitude: %d\n",get_magnitude());
+
+        get_config();
+
+        get_ZMCO();
+        
+        sleep(3);
     }
 }
