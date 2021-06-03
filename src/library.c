@@ -302,8 +302,6 @@ void get_config()
 
 }
 
-#define ZMCO_ADD 0x00 // R 1:0  f ZPOS and MPOS have never been permanently written 
-
 double get_ZPOS() //start position
 {
     send_receive_data(0, ZPOS_ADD, &value_lsb, &value_msb);
