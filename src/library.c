@@ -184,10 +184,68 @@ void send_receive_data(i2c_port_t i2c_num, int adress, uint8_t * value_lsb, uint
     i2c_cmd_link_delete(cmd);
 }
 
+void write_data(i2c_port_t i2c_num, int adress, uint8_t * value_lsb, uint8_t * value_msb)
+{
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    
+    i2c_master_start(cmd); //start comunicazione
+    
+    //write address 
+    i2c_master_write_byte(cmd, (hall_sensor << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
+    //write address register
+    i2c_master_write_byte(cmd, adress, ACK_CHECK_EN);    
+
+    //write uint8_t value_lsb;
+    i2c_master_write_byte(cmd,value_lsb,ACK_VAL);
+
+    //write uint8_t value_msb;
+    i2c_master_write_byte(cmd, value_msb, NACK_VAL);
+
+    i2c_master_stop(cmd);
+
+    i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
+    
+    i2c_cmd_link_delete(cmd);
+}
+
 uint8_t value_lsb,value_msb,zeros;
 
 uint16_t angle, magnitude;
 
+void write_ZPOS(double angle_raw)
+{
+    angle = (uint16_t) angle_raw * 4096 / 360;
+    value_msb =(uint8_t) angle & 0b0000000011111111;  
+    value_lsb = (uint8_t) angle>>8 & 0b0000000000001111;
+    
+    write_data( 0 ,ZPOS_ADD, &value_lsb, &value_msb);
+}
+
+void write_MPOS(double angle_raw)
+{
+    angle = (uint16_t) angle_raw * 4096 / 360;
+    value_msb =(uint8_t) angle & 0b0000000011111111;  
+    value_lsb = (uint8_t) angle>>8 & 0b0000000000001111;
+    
+    write_data( 0 ,MPOS_ADD, &value_lsb, &value_msb);
+}
+
+void write_MANG(double angle_raw)
+{
+    angle = (uint16_t) angle_raw * 4096 / 360;
+    value_msb =(uint8_t) angle & 0b0000000011111111;  
+    value_lsb = (uint8_t) angle>>8 & 0b0000000000001111;
+    
+    write_data( 0 ,MANG_ADD, &value_lsb, &value_msb);
+}
+
+void write_config(uint8_t power_mode, uint8_t isteresis, uint8_t output, uint8_t pwmF, uint8_t slow_filter, uint8_t fast_filter_threshold, uint8_t whatdog)
+{
+    value_lsb=(uint8_t) pwmF<<6 | output<<4 | isteresis<<2 | power_mode;
+    value_msb=(uint8_t) whatdog<<5 | slow_filter<<2 | fast_filter_threshold;
+    //to test per evitare che faccia qualche porcheria i puntatori
+    //write_data( 0 ,ZPOS_ADD, &value_lsb, &value_msb);
+}
 
 double get_raw_angle()
 {    
