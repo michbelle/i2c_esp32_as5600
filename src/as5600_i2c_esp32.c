@@ -389,22 +389,6 @@ int get_ZMCO()
 
 }
 
-void app_main(void)
-{
-    ESP_ERROR_CHECK(i2c_master_init());
-    while(1)
-    {
-        printf("\nangolo_raw: %lf\n",get_raw_angle());
-        printf("angolo: %lf\n",get_angle());
-        get_magnete_status();
-        
-        printf("AGC: %d\n",get_AGC());
-        printf("magnitude: %d\n",get_magnitude());
 
-        get_config();
-
-        get_ZMCO();
-        
-        sleep(3);
-    }
-}
+//to add at the code
+//ESP_ERROR_CHECK(i2c_master_init());

@@ -1,0 +1,32 @@
+{
+    "name": "as5600_i2c_esp32",
+    "version": "1.0.0",
+    "description": "A library that include functions to communicate throught i2c from esp32 to as5600",
+    "keywords": "i2c, esp32, as5600",
+    "repository":
+    {
+      "type": "git",
+      "url": "https://github.com/michbelle/i2c_esp32_as5600.git"
+    },
+    "authors":
+    [
+      {
+        "name": "Michele Bello ;-)",
+        "email": "",
+        "url": ""
+      },
+      {
+        "name": "",
+        "email": "",
+        "url": "",
+        "maintainer": true
+      }
+    ],
+    "license": "MIT",
+    "homepage": "",
+    "dependencies": {
+      "ownername/print": "~1.3.0"
+    },
+    "frameworks": "*",
+    "platforms": "esp32"
+  }
