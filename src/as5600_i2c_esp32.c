@@ -3,7 +3,6 @@
 #include "driver/i2c.h"
 #include "sdkconfig.h"
 
-#include"as5600_i2c_esp32.h"
 
 
 #define hall_sensor 0x36 //address hall sensors
@@ -126,7 +125,7 @@
 
 
 
-//static 
+//static esp_err_t i2c_master_init(void)
 esp_err_t i2c_master_init(void)
 {
     int i2c_master_port = 0;

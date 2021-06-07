@@ -1,3 +1,9 @@
+
+#ifndef as5600_i2c_esp32_h
+#define as5600_i2c_esp32_h
+
+
+
 /*
 function configuration of the master i2c for the esp32
 */
@@ -41,3 +47,6 @@ double get_MPOS();
 double get_MANG();
 
 int get_ZMCO();
+
+
+#endif
