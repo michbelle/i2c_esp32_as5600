@@ -126,7 +126,8 @@
 
 
 
-static esp_err_t i2c_master_init(void)
+//static 
+esp_err_t i2c_master_init(void)
 {
     int i2c_master_port = 0;
     i2c_config_t conf = {

@@ -3,7 +3,8 @@
 #include "driver/i2c.h"
 #include "sdkconfig.h"
 
-#include"as5600_i2c_esp32.h"
+#include"as5600_i2c_esp32.c"
+
 
 int app_main()
 {

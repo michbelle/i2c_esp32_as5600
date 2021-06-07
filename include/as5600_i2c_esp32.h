@@ -1,7 +1,8 @@
 /*
 function configuration of the master i2c for the esp32
 */
-static esp_err_t i2c_master_init(void);
+//static 
+esp_err_t i2c_master_init(void);
 
 /*
 function to receive data from a start address with i2c
