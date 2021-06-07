@@ -3,7 +3,8 @@
 #include "driver/i2c.h"
 #include "sdkconfig.h"
 
-#include<unistd.h>
+#include"as5600_i2c_esp32.h"
+
 
 #define hall_sensor 0x36 //address hall sensors
 
